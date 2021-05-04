@@ -24,7 +24,6 @@ spec:
   - protocol: TCP
     port: 3306
     targetPort: 3306
-  #https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
