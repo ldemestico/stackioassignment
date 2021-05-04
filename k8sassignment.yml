@@ -1,0 +1,118 @@
+kind: ConfigMap
+apiVersion: v1 ##I put the variables in this configmap, but it could be replase with a common env file, but since im not building the image in docker this is the best way, need a server anyway, maybe would be easier creating an env file and set it in the dockerfile
+metadata:
+  name: mysql-vars
+data:
+  url: yoururl.com
+---
+apiVersion: v1 
+kind: Secret
+metadata:
+  name: mysql-pwd
+type: Opaque
+data:
+  rootpwd: oehskohekso243
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+spec:
+  selector:
+    app: k8sassignment
+  ports:
+  - protocol: TCP
+    port: 3306
+    targetPort: 3306
+  #https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  labels:
+    app: k8sassignment
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi  #set size
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+spec:
+  replicas: 3   #1= non HA, but would generate downtime on deploy/updates, 3 and not 2 for good luck
+  selector:
+    matchLabels:
+      app: k8sassignment
+  template:
+    metadata:
+      labels:
+        app: k8sassignment
+    spec:
+      containers:
+      - image: mysql:5.7 #I would not recommend latest
+        name: mysql
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 1000m   #just scalling cpu as requested, could be resolve in EKS without this option
+            memory: 100Mi
+        #livenessProbe: #since shoud not be HA I didn't set it, but there is a default rule
+        # env:
+        #   # Use secret in real usage
+        # - name: MYSQL_ROOT_PASSWORD
+        #   value: password
+        env:
+        - name: MYSQL_ROOT_PASSWORD  ##it is possible to not use comfigmap, but I would not recommend it
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pwd
+              key: rootpwd
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-ps
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-ps
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+---
+apiVersion: v1
+data:
+  "3306": mysql/mysql-service:3306
+kind: ConfigMap
+metadata:
+  name: tcp-services
+  namespace: ingress-nginx #I am using nginx, but it can be a cloud solution, haproxy, etc. It most be installed,  theeasier way is via helm in case of nginx
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: mysql-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx #I am using nginx, but it can be a cloud solution, haproxy, etc. It most be installed,  theeasier way is via helm in case of nginx
+  labels:
+    app: k8sassignment
+spec:
+  rules:
+  - host: URL
+    valueFrom:
+      configMapKeyRef:
+        name: mysql-vars
+        key: url  
+    http:
+      paths:
+      - backend:
+          serviceName: mysql-service
+          servicePort: 3306
+        path: /
+
+        
