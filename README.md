@@ -19,4 +19,4 @@
   
   Since I didn't have much time, I couldn't make a good readme file or split the yaml.
   
-  I couldn't try it because I can't use my employer group and I don't have time to install one on my computer. But it should work.
+  I couldn't try it because I can't use my employer cluster and I don't have time to install one on my computer. But it should work.
