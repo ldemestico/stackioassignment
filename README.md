@@ -17,6 +17,6 @@
 
   It is recommended to separate the yaml file by type to run them.
   
-  Since I didn't have much time, I couldn't make a good readme file or split the yaml.
+  Since I didn't have much time, I couldn't make a good readme file or split the yaml explaining what everithing do.
   
   I couldn't try it because I can't use my employer cluster and I don't have time to install one on my computer. But it should work.
